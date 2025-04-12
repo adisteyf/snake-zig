@@ -71,8 +71,17 @@ fn checkEat(rand: std.rand.Random) !bool {
 }
 
 fn checkCollide() bool {
+    const checkCopy = pos.items[pos.items.len - 1];
+
+    if (checkCopy.x >= 40 or
+        checkCopy.x <= 0 or
+        checkCopy.y >= 40 or
+        checkCopy.y <= 0)
+    {
+        return true;
+    }
+
     for (pos.items[0 .. pos.items.len - 1]) |item| {
-        const checkCopy = pos.items[pos.items.len - 1];
         if (item.x == checkCopy.x and
             item.y == checkCopy.y)
         {
@@ -110,7 +119,8 @@ pub fn main() !void {
 
     while (true) {
         const poslen = pos.items.len - 1;
-        _ = c.wclear(c.stdscr);
+        if (!gameover)
+            _ = c.wclear(c.stdscr);
         _ = c.wrefresh(c.stdscr);
         var char: c_int = nextc;
         if (char == 0) {
@@ -122,12 +132,13 @@ pub fn main() !void {
         }
 
         if (gameover) {
-            char = c.ERR;
-
             for (pos.items, 0..) |_, i| {
                 pos.items[i].dir = Direction.NONE;
             }
-            _ = c.mvprintw(0, 0, "GAME OVER");
+            _ = c.bkgd('.');
+            _ = c.wrefresh(c.stdscr);
+            _ = c.mvprintw(20, 20, "GAME OVER");
+            _ = c.wrefresh(c.stdscr);
         }
 
         nextc = 0;
@@ -202,6 +213,22 @@ pub fn main() !void {
             }
 
             _ = c.mvprintw(item.y, item.x, "@");
+        }
+
+        for (0..40 + 1) |i| {
+            _ = c.mvprintw(0, @intCast(i), "~");
+        }
+
+        for (0..40 + 1) |i| {
+            _ = c.mvprintw(@intCast(i), 0, "~");
+        }
+
+        for (0..40 + 1) |i| {
+            _ = c.mvprintw(40, @intCast(i), "~");
+        }
+
+        for (0..40 + 1) |i| {
+            _ = c.mvprintw(@intCast(i), 40, "~");
         }
 
         _ = c.wrefresh(c.stdscr);
