@@ -7,6 +7,8 @@ const Direction = enum {
     DOWN,
     LEFT,
     RIGHT,
+    NONE,
+    VOID,
 };
 
 const Point = struct {
@@ -16,6 +18,7 @@ const Point = struct {
 };
 
 var pos = std.ArrayList(Point).init(allocator);
+var apples = std.ArrayList(Point).init(allocator);
 var dir = Direction.RIGHT;
 
 fn newPoint(x: i32, y: i32, p: *Point) void {
@@ -37,10 +40,30 @@ fn checkBack(char: i32, d: Direction) bool {
         char == 'd' and d != Direction.LEFT;
 }
 
+fn checkEat() bool {
+    const head = pos.items[pos.items.len - 1];
+    var index: usize = 0;
+    for (apples.items) |item| {
+        if (item.dir == Direction.VOID) {
+            continue;
+        }
+
+        if (item.x == head.x and item.y == head.y) {
+            chDirection(Direction.VOID, &apples.items[index]);
+            return true;
+        }
+        index += 1;
+    }
+
+    return false;
+}
+
 pub fn main() !void {
     try pos.append(Point{ .x = 10, .y = 10, .dir = Direction.RIGHT });
     try pos.append(Point{ .x = 11, .y = 10, .dir = Direction.RIGHT });
     try pos.append(Point{ .x = 12, .y = 10, .dir = Direction.RIGHT });
+
+    try apples.append(Point{ .x = 20, .y = 20, .dir = Direction.NONE });
     const s: ?*c.SCREEN = c.newterm(0, c.stdout, c.stdin);
 
     _ = c.bkgd(' ');
@@ -55,7 +78,7 @@ pub fn main() !void {
         _ = c.wclear(c.stdscr);
         _ = c.wrefresh(c.stdscr);
         var char: c_int = c.getch();
-        while (char == lastc) { // fix bug when key are repeating and snake turning off
+        while (char == lastc) { // fix bug when key are repeating and snake turning off //
             char = c.getch();
         }
 
@@ -63,12 +86,15 @@ pub fn main() !void {
             break;
         }
 
-        if (char == 'j') {
+        if (char == 'j' or checkEat()) { // cheat code (add +1 to tail) //
             switch (pos.items[poslen].dir) {
                 Direction.UP => try pos.append(genPoint(0, -1, pos.items[poslen])),
                 Direction.DOWN => try pos.append(genPoint(0, 1, pos.items[poslen])),
                 Direction.LEFT => try pos.append(genPoint(-1, 0, pos.items[poslen])),
                 Direction.RIGHT => try pos.append(genPoint(1, 0, pos.items[poslen])),
+
+                Direction.NONE => {},
+                Direction.VOID => {},
             }
         }
 
@@ -78,6 +104,9 @@ pub fn main() !void {
                 Direction.LEFT => newPoint(-1, 0, &pos.items[i]),
                 Direction.UP => newPoint(0, -1, &pos.items[i]),
                 Direction.DOWN => newPoint(0, 1, &pos.items[i]),
+
+                Direction.NONE => {},
+                Direction.VOID => {},
             }
         }
 
@@ -103,6 +132,15 @@ pub fn main() !void {
         for (pos.items) |item| {
             _ = c.mvprintw(item.y, item.x, "&");
         }
+
+        for (apples.items) |item| {
+            if (item.dir == Direction.VOID) {
+                continue;
+            }
+
+            _ = c.mvprintw(item.y, item.x, "@");
+        }
+
         _ = c.wrefresh(c.stdscr);
         _ = c.usleep(100000);
         if (char != c.ERR) {
@@ -114,5 +152,6 @@ pub fn main() !void {
     _ = c.getch();
     _ = c.endwin();
     _ = c.delscreen(s);
-    //dir.deinit();
+    pos.deinit();
+    apples.deinit();
 }
