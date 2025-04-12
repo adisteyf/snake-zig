@@ -26,6 +26,10 @@ fn genPoint(x: i32, y: i32, p: Point) Point {
     return Point{ .x = p.x + x, .y = p.y + y, .dir = p.dir };
 }
 
+fn chDirection(d: Direction, p: *Point) void {
+    p.* = Point{ .x = p.x, .y = p.y, .dir = d };
+}
+
 pub fn main() !void {
     try pos.append(Point{ .x = 10, .y = 10, .dir = Direction.RIGHT });
     try pos.append(Point{ .x = 11, .y = 10, .dir = Direction.RIGHT });
@@ -84,10 +88,10 @@ pub fn main() !void {
             char == 'd' and pos.items[poslen].dir != Direction.LEFT)
         {
             switch (char) {
-                'w' => pos.items[poslen] = Point{ .x = pos.items[poslen].x, .y = pos.items[poslen].y, .dir = Direction.UP },
-                'a' => pos.items[poslen] = Point{ .x = pos.items[poslen].x, .y = pos.items[poslen].y, .dir = Direction.LEFT },
-                's' => pos.items[poslen] = Point{ .x = pos.items[poslen].x, .y = pos.items[poslen].y, .dir = Direction.DOWN },
-                'd' => pos.items[poslen] = Point{ .x = pos.items[poslen].x, .y = pos.items[poslen].y, .dir = Direction.RIGHT },
+                'w' => chDirection(Direction.UP, &pos.items[poslen]),
+                'a' => chDirection(Direction.LEFT, &pos.items[poslen]),
+                's' => chDirection(Direction.DOWN, &pos.items[poslen]),
+                'd' => chDirection(Direction.RIGHT, &pos.items[poslen]),
 
                 else => {},
             }
