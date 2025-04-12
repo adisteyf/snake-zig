@@ -22,6 +22,10 @@ fn newPoint(x: i32, y: i32, p: *Point) void {
     p.* = Point{ .x = p.x + x, .y = p.y + y, .dir = p.dir };
 }
 
+fn genPoint(x: i32, y: i32, p: Point) Point {
+    return Point{ .x = p.x + x, .y = p.y + y, .dir = p.dir };
+}
+
 pub fn main() !void {
     try pos.append(Point{ .x = 10, .y = 10, .dir = Direction.RIGHT });
     try pos.append(Point{ .x = 11, .y = 10, .dir = Direction.RIGHT });
@@ -50,10 +54,10 @@ pub fn main() !void {
 
         if (char == 'j') {
             switch (pos.items[poslen].dir) {
-                Direction.UP => try pos.append(Point{ .x = pos.items[poslen].x, .y = pos.items[poslen].y - 1, .dir = pos.items[poslen].dir }),
-                Direction.DOWN => try pos.append(Point{ .x = pos.items[poslen].x, .y = pos.items[poslen].y + 1, .dir = pos.items[poslen].dir }),
-                Direction.LEFT => try pos.append(Point{ .x = pos.items[poslen].x - 1, .y = pos.items[poslen].y, .dir = pos.items[poslen].dir }),
-                Direction.RIGHT => try pos.append(Point{ .x = pos.items[poslen].x + 1, .y = pos.items[poslen].y, .dir = pos.items[poslen].dir }),
+                Direction.UP => try pos.append(genPoint(0, -1, pos.items[poslen])),
+                Direction.DOWN => try pos.append(genPoint(0, 1, pos.items[poslen])),
+                Direction.LEFT => try pos.append(genPoint(-1, 0, pos.items[poslen])),
+                Direction.RIGHT => try pos.append(genPoint(1, 0, pos.items[poslen])),
             }
         }
 
