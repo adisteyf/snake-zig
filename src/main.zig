@@ -70,7 +70,21 @@ fn checkEat(rand: std.rand.Random) !bool {
     return false;
 }
 
+fn checkCollide() bool {
+    for (pos.items[0 .. pos.items.len - 1]) |item| {
+        const checkCopy = pos.items[pos.items.len - 1];
+        if (item.x == checkCopy.x and
+            item.y == checkCopy.y)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 pub fn main() !void {
+    var gameover: bool = false;
     var lastc: c_int = undefined;
     var nextc: c_int = 0;
     var prng = std.rand.DefaultPrng.init(blk: {
@@ -103,13 +117,22 @@ pub fn main() !void {
             char = c.getch();
         }
 
+        if (char == 'q') {
+            break;
+        }
+
+        if (gameover) {
+            char = c.ERR;
+
+            for (pos.items, 0..) |_, i| {
+                pos.items[i].dir = Direction.NONE;
+            }
+            _ = c.mvprintw(0, 0, "GAME OVER");
+        }
+
         nextc = 0;
         while (char == lastc) { // to fix bug when key are repeating and snake turning off //
             char = c.getch();
-        }
-
-        if (char == 'q') {
-            break;
         }
 
         if (char == 'j' or try checkEat(rand)) { // cheat code (add +1 to tail) //
@@ -160,8 +183,17 @@ pub fn main() !void {
             }
         }
 
-        for (pos.items) |item| {
-            _ = c.mvprintw(item.y, item.x, "&");
+        for (pos.items, 0..) |_, i| {
+            if (poslen == i) {
+                _ = c.mvprintw(pos.items[i].y, pos.items[i].x, "#");
+                break;
+            }
+
+            _ = c.mvprintw(pos.items[i].y, pos.items[i].x, "&");
+        }
+
+        if (!gameover) {
+            gameover = checkCollide();
         }
 
         for (apples.items) |item| {
@@ -177,7 +209,6 @@ pub fn main() !void {
         if (char != c.ERR) {
             lastc = char;
         }
-        _ = c.mvprintw(0, 0, "%d\n", char);
     }
 
     _ = c.getch();
