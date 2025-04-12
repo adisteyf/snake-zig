@@ -30,6 +30,13 @@ fn chDirection(d: Direction, p: *Point) void {
     p.* = Point{ .x = p.x, .y = p.y, .dir = d };
 }
 
+fn checkBack(char: i32, d: Direction) bool {
+    return char == 'w' and d != Direction.DOWN or
+        char == 'a' and d != Direction.RIGHT or
+        char == 's' and d != Direction.UP or
+        char == 'd' and d != Direction.LEFT;
+}
+
 pub fn main() !void {
     try pos.append(Point{ .x = 10, .y = 10, .dir = Direction.RIGHT });
     try pos.append(Point{ .x = 11, .y = 10, .dir = Direction.RIGHT });
@@ -82,11 +89,7 @@ pub fn main() !void {
             pos.items[i] = Point{ .x = pos.items[i].x, .y = pos.items[i].y, .dir = pos.items[i + 1].dir };
         }
 
-        if (char == 'w' and pos.items[poslen].dir != Direction.DOWN or
-            char == 'a' and pos.items[poslen].dir != Direction.RIGHT or
-            char == 's' and pos.items[poslen].dir != Direction.UP or
-            char == 'd' and pos.items[poslen].dir != Direction.LEFT)
-        {
+        if (checkBack(char, pos.items[poslen].dir)) {
             switch (char) {
                 'w' => chDirection(Direction.UP, &pos.items[poslen]),
                 'a' => chDirection(Direction.LEFT, &pos.items[poslen]),
