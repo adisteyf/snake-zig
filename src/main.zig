@@ -40,7 +40,18 @@ fn checkBack(char: i32, d: Direction) bool {
         char == 'd' and d != Direction.LEFT;
 }
 
-fn checkEat() bool {
+fn genApple(rand: std.rand.Random) !void {
+    for (apples.items, 0..) |_, i| {
+        if (apples.items[i].dir == Direction.VOID) {
+            apples.items[i] = Point{ .x = rand.intRangeAtMost(i32, 1, 40), .y = rand.intRangeAtMost(i32, 1, 40), .dir = Direction.NONE };
+            return;
+        }
+    }
+
+    try apples.append(Point{ .x = rand.intRangeAtMost(i32, 1, 40), .y = rand.intRangeAtMost(i32, 1, 40), .dir = Direction.NONE });
+}
+
+fn checkEat(rand: std.rand.Random) !bool {
     const head = pos.items[pos.items.len - 1];
     var index: usize = 0;
     for (apples.items) |item| {
@@ -50,6 +61,7 @@ fn checkEat() bool {
 
         if (item.x == head.x and item.y == head.y) {
             chDirection(Direction.VOID, &apples.items[index]);
+            try genApple(rand);
             return true;
         }
         index += 1;
@@ -59,11 +71,21 @@ fn checkEat() bool {
 }
 
 pub fn main() !void {
+    var lastc: c_int = undefined;
+    var nextc: c_int = 0;
+    var prng = std.rand.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.posix.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
+    const rand = prng.random();
+
     try pos.append(Point{ .x = 10, .y = 10, .dir = Direction.RIGHT });
     try pos.append(Point{ .x = 11, .y = 10, .dir = Direction.RIGHT });
     try pos.append(Point{ .x = 12, .y = 10, .dir = Direction.RIGHT });
 
-    try apples.append(Point{ .x = 20, .y = 20, .dir = Direction.NONE });
+    try genApple(rand);
+
     const s: ?*c.SCREEN = c.newterm(0, c.stdout, c.stdin);
 
     _ = c.bkgd(' ');
@@ -72,13 +94,17 @@ pub fn main() !void {
     _ = c.noecho();
     _ = c.nodelay(c.stdscr, true);
 
-    var lastc: c_int = undefined;
     while (true) {
         const poslen = pos.items.len - 1;
         _ = c.wclear(c.stdscr);
         _ = c.wrefresh(c.stdscr);
-        var char: c_int = c.getch();
-        while (char == lastc) { // fix bug when key are repeating and snake turning off //
+        var char: c_int = nextc;
+        if (char == 0) {
+            char = c.getch();
+        }
+
+        nextc = 0;
+        while (char == lastc) { // to fix bug when key are repeating and snake turning off //
             char = c.getch();
         }
 
@@ -86,7 +112,12 @@ pub fn main() !void {
             break;
         }
 
-        if (char == 'j' or checkEat()) { // cheat code (add +1 to tail) //
+        if (char == 'j' or try checkEat(rand)) { // cheat code (add +1 to tail) //
+            if (char != c.ERR) { // to fix bug with invalid head //
+                nextc = char;
+                char = c.ERR;
+            }
+
             switch (pos.items[poslen].dir) {
                 Direction.UP => try pos.append(genPoint(0, -1, pos.items[poslen])),
                 Direction.DOWN => try pos.append(genPoint(0, 1, pos.items[poslen])),
